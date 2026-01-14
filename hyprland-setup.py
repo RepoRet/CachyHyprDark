@@ -135,23 +135,57 @@ Type=Application
     run_cmd('systemctl enable sddm', sudo=True)
 
     # Optional autologin
-    if prompt_yes_no("Enable autologin for current user? (recommended for single-user setups)"):
-        autologin_dir = '/etc/sddm.conf.d/'
-        autologin_file = os.path.join(autologin_dir, 'autologin.conf')
+    print_color("\nSDDM Autologin Setup (optional)")
+    print("This will configure SDDM to automatically log in the selected user into Hyprland.")
+    print("Useful for single-user machines; can be removed later by deleting /etc/sddm.conf.d/autologin.conf")
+    
+    if prompt_yes_no("Would you like to enable autologin?"):
+        # Try to detect current user, but let user override
+        default_user = os.getlogin()
+        print_color(f"Detected current user: {default_user}", 'yellow')
         
-        # Create directory with sudo if missing
-        if not os.path.exists(autologin_dir):
-            run_cmd(f'mkdir -p {autologin_dir}', sudo=True)
-            run_cmd(f'chmod 755 {autologin_dir}', sudo=True)
+        user_input = input(f"Enter username for autologin (press Enter to use '{default_user}'): ").strip()
+        autologin_user = user_input if user_input else default_user
         
-        # Write config file with sudo
-        content = f"""[Autologin]
-User={os.getlogin()}
+        # Quick validation: check if user exists
+        if not run_cmd(f"id {autologin_user}", capture_output=True):
+            print_color(f"Warning: User '{autologin_user}' does not seem to exist on the system.", 'red')
+            if not prompt_yes_no("Continue anyway? (not recommended)"):
+                print_color("Autologin setup skipped.")
+                # Skip to final instructions
+                goto_final = True  # We'll add a flag to skip reboot prompt if needed
+            else:
+                goto_final = False
+        else:
+            goto_final = False
+        
+        if not goto_final:
+            print_color(f"Will configure autologin for user: {autologin_user}")
+            print_color(f"Session: hyprland.desktop")
+            
+            if prompt_yes_no("Confirm and write config now?"):
+                autologin_dir = '/etc/sddm.conf.d/'
+                autologin_file = os.path.join(autologin_dir, 'autologin.conf')
+                
+                # Create directory if missing
+                if not os.path.exists(autologin_dir):
+                    run_cmd(f'mkdir -p {autologin_dir}', sudo=True)
+                    run_cmd(f'chmod 755 {autologin_dir}', sudo=True)
+                
+                # Write the config safely with sudo tee
+                content = f"""[Autologin]
+User={autologin_user}
 Session=hyprland.desktop
 """
-        # Use echo + sudo tee to write safely
-        run_cmd(f"echo '{content}' | sudo tee {autologin_file} > /dev/null")
-        print_color(f"Autologin configured: {autologin_file}")
+                run_cmd(f"echo '{content}' | sudo tee {autologin_file} > /dev/null")
+                run_cmd(f"sudo chmod 644 {autologin_file}")
+                
+                print_color(f"Autologin config created: {autologin_file}")
+                print_color("You can disable later by removing this file or editing it.")
+            else:
+                print_color("Autologin setup cancelled.")
+    else:
+        print_color("Autologin skipped.")
 
     # Final instructions
     print_color("\nSetup complete!", 'green')
