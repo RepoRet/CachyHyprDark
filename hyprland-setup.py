@@ -60,17 +60,6 @@ def main():
     ]
     install_pkgs(core_pkgs)
 
-    # Optional hyprtheme build
-    if prompt_yes_no("Install hyprtheme (Rust-based theme switcher)?"):
-        print_color("Building hyprtheme...")
-        install_pkgs(['rust', 'git', 'make'])
-        os.chdir('/tmp')
-        run_cmd('git clone https://github.com/hyprwm/hyprtheme')
-        os.chdir('hyprtheme')
-        run_cmd('cargo build --release')
-        run_cmd('install -Dm755 target/release/hyprtheme /usr/local/bin/hyprtheme', sudo=True)
-        os.chdir(os.path.dirname(os.path.abspath(__file__)))
-
     # Theme setup (rsync with --delete)
     print_color("Deploying dark theme...")
     theme_src = './themes/dark/'
@@ -92,16 +81,6 @@ def main():
     if not os.path.exists(conf_dest):
         shutil.copy('hyprland.conf', conf_dest)
         print_color("Copied starter hyprland.conf")
-
-    # Optional utilities
-    if prompt_yes_no("Install utilities (brave-browser, samba, rustdesk-bin)?"):
-        util_pkgs = ['brave-browser', 'samba']
-        install_pkgs(util_pkgs)
-        # rustdesk-bin likely AUR; warn if yay not installed
-        if pkg_installed('yay'):
-            run_cmd('yay -S --noconfirm rustdesk-bin')
-        else:
-            print_color("Install yay for rustdesk-bin (AUR): git clone https://aur.archlinux.org/yay.git && cd yay && makepkg -si", 'yellow')
 
     # Optional gaming
     if prompt_yes_no("Install gaming packages (steam, obs-studio, vulkan loaders)?"):
