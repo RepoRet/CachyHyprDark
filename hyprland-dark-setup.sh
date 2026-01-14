@@ -176,4 +176,121 @@ else
 fi
 
 # Step 7: Optional utilities
-echo -e "${BLUE}→ Optional utilities${
+echo -e "${BLUE}→ Optional utilities${NC}"
+echo -e "${YELLOW}Install utilities? (brave-browser samba rustdesk-bin) (y/N)${NC}"
+read -r utils_choice
+if [[ "$utils_choice" =~ ^[Yy]$ ]]; then
+    utils_official=(brave-browser samba)
+    install_if_missing "${utils_official[@]}"
+    install_aur_if_missing "rustdesk-bin"
+fi
+
+# Step 8: Optional gaming
+echo -e "${YELLOW}Install gaming? (steam obs-studio vulkan-icd-loader lib32-vulkan-icd-loader) (y/N)${NC}"
+read -r gaming_choice
+if [[ "$gaming_choice" =~ ^[Yy]$ ]]; then
+    gaming_packages=(steam obs-studio vulkan-icd-loader lib32-vulkan-icd-loader)
+    install_if_missing "${gaming_packages[@]}"
+fi
+
+# Step 9: GPU drivers
+echo -e "${BLUE}→ GPU detection & drivers${NC}"
+gpu_info=$(lspci | grep -E "VGA|3D" | tr '[:upper:]' '[:lower:]')
+
+nvidia=false
+amd=false
+
+if echo "$gpu_info" | grep -q nvidia; then
+    nvidia=true
+    echo -e "${YELLOW}NVIDIA detected.${NC}"
+elif echo "$gpu_info" | grep -q "amd\|ati\|radeon"; then
+    amd=true
+    echo -e "${YELLOW}AMD detected.${NC}"
+else
+    echo -e "${YELLOW}No NVIDIA/AMD detected (Intel?). Skipping.${NC}"
+fi
+
+if $nvidia; then
+    echo -e "${YELLOW}Install NVIDIA? (nvidia nvidia-utils) (y/N)${NC}"
+    read -r nvidia_choice
+    if [[ "$nvidia_choice" =~ ^[Yy]$ ]]; then
+        install_if_missing nvidia nvidia-utils
+    fi
+fi
+
+if $amd; then
+    echo -e "${YELLOW}Install AMD? (mesa vulkan-radeon lib32-vulkan-radeon) (y/N)${NC}"
+    read -r amd_choice
+    if [[ "$amd_choice" =~ ^[Yy]$ ]]; then
+        install_if_missing mesa vulkan-radeon lib32-vulkan-radeon
+    fi
+fi
+
+# Step 10: Multimedia & MIME defaults
+echo -e "${BLUE}→ Installing multimedia & setting MIME defaults...${NC}"
+media_packages=(mpv swayimg)
+install_if_missing "${media_packages[@]}"
+
+# Set MIME defaults (idempotent)
+xdg-mime default mpv.desktop video/mp4 video/mpeg video/quicktime video/x-msvideo video/x-matroska
+xdg-mime default swayimg.desktop image/jpeg image/png image/gif image/webp image/tiff image/bmp
+
+echo -e "${GREEN}MIME defaults set for mpv (video) & swayimg (images).${NC}"
+
+# Step 11: SDDM setup
+echo -e "${BLUE}→ Setting up SDDM & Hyprland session...${NC}"
+install_if_missing sddm
+
+# Create Hyprland desktop file if missing
+session_file="/usr/share/wayland-sessions/hyprland.desktop"
+if [ ! -f "$session_file" ]; then
+    sudo bash -c "cat > $session_file" << EOL
+[Desktop Entry]
+Name=Hyprland
+Comment=Hyprland Compositor
+Exec=Hyprland
+Type=Application
+EOL
+    echo -e "${GREEN}Hyprland session file created.${NC}"
+else
+    echo -e "${YELLOW}Hyprland session file exists — skipping.${NC}"
+fi
+
+# Enable SDDM if not enabled
+if ! systemctl is-enabled sddm &>/dev/null; then
+    sudo systemctl enable sddm
+    echo -e "${GREEN}SDDM enabled.${NC}"
+fi
+
+# Optional autologin
+echo -e "${YELLOW}Enable autologin for current user? (y/N)${NC}"
+read -r autologin_choice
+if [[ "$autologin_choice" =~ ^[Yy]$ ]]; then
+    autologin_dir="/etc/sddm.conf.d"
+    sudo mkdir -p "$autologin_dir"
+    sudo bash -c "cat > $autologin_dir/autologin.conf" << EOL
+[Autologin]
+User=$(whoami)
+Session=hyprland.desktop
+EOL
+    echo -e "${GREEN}Autologin configured.${NC}"
+else
+    echo -e "${YELLOW}Skipping autologin.${NC}"
+fi
+
+# Final instructions
+echo
+echo -e "${GREEN}=== Setup complete! ===${NC}"
+echo "Next:"
+echo "  - Review ~/.config/hypr/hyprland.conf (sources theme.conf)"
+echo "  - Wallpaper: Adjust swww init in hyprland.conf if filename ≠ wallpaper.png"
+echo "  - Test: startx or reboot into SDDM"
+echo "  - Backup: Always back up configs before changes"
+echo
+echo -e "${YELLOW}Reboot now? (y/N)${NC}"
+read -r reboot_choice
+if [[ "$reboot_choice" =~ ^[Yy]$ ]]; then
+    sudo reboot
+fi
+
+exit 0
