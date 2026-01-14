@@ -1,4 +1,4 @@
-## Summary of hyprland-dark-setup.sh Script
+## Summary of hyprland-setup.py Script
 
 Goal:
 Automate post-install setup on a minimal CachyOS (TTY/no GUI) to create a modern, dark-themed Hyprland desktop. The script runs as regular user from the cloned repo directory[](https://github.com/RepoRet/CachyHyprDark.git). It is designed to be safe and re-runnable.
@@ -59,8 +59,8 @@ Safety features:
 
 ## Repo Source
 https://github.com/RepoRet/CachyHyprDark.git
-CachyHyprDark/                           # repo root
-├── hyprland-dark-setup.sh               # the only script — installs everything
+CachyHyprDark/                            # repo root
+├── hyprland-setup.py                    # the only script — installs everything
 ├── hyprland.conf                        # template / starter config (script copies it if missing)
 ├── README.md                            # instructions, credits, usage
 └── themes/
