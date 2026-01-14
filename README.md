@@ -22,19 +22,19 @@ CachyHyprDark/
 ├── hyprland-dark-setup.sh          # Main installation script – run this!
 ├── hyprland.conf                   # Starter config template (copied only if missing)
 ├── README.md                       # This file
-└── themes/
-└── dark/                       # Embedded theme files (forked & modified)
-├── dunst/                  # Notification theme
-├── kitty/                  # Terminal theme
-├── rofi/                   # Launcher theme
-├── swaylock/               # Lock screen theme
-├── wallpaper/              # Background image(s)
-├── waybar/                 # Status bar theme
-├── wlogout/                # Logout menu theme
-├── theme.conf              # Hyprland color/border variables
-├── theme.toml              # Theme metadata (optional)
-└── LICENSE                 # Original license & credits
-text## Requirements
+    └── themes/
+        └── dark/                       # Embedded theme files (forked & modified)
+	    ├── dunst/                  # Notification theme
+	    ├── kitty/                  # Terminal theme
+	    ├── rofi/                   # Launcher theme
+	    ├── swaylock/               # Lock screen theme
+	    ├── wallpaper/              # Background image(s)
+	    ├── waybar/                 # Status bar theme
+	    ├── wlogout/                # Logout menu theme
+	    ├── theme.conf              # Hyprland color/border variables
+	    ├── theme.toml              # Theme metadata (optional)
+
+## Requirements
 
 - Fresh/minimal **CachyOS** installation (preferably the latest ISO as of 2026)
 - Internet connection during setup
