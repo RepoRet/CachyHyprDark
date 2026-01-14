@@ -2,7 +2,6 @@ import subprocess
 import os
 import sys
 import shutil
-import re
 
 # Colored output helpers
 def print_color(text, color='green'):
@@ -43,7 +42,7 @@ def detect_gpu():
     return None
 
 def main():
-    # Ensure rsync for theme sync
+    # Ensure rsync is available for theme deployment
     install_pkgs(['rsync'])
 
     # Update system
@@ -60,14 +59,14 @@ def main():
     ]
     install_pkgs(core_pkgs)
 
-    # Theme setup (rsync with --delete)
+    # Theme setup (rsync with --delete to ensure clean deployment)
     print_color("Deploying dark theme...")
     theme_src = './themes/dark/'
     theme_dest = os.path.expanduser('~/.config/hypr/themes/dark/')
     os.makedirs(theme_dest, exist_ok=True)
     run_cmd(f'rsync -av --delete {theme_src} {theme_dest}')
 
-    # Symlinks for configs (skip if exist)
+    # Create symlinks for themed configs (only if destination doesn't exist)
     configs = ['waybar', 'kitty', 'rofi', 'dunst', 'swaylock', 'wlogout']
     for config in configs:
         src = os.path.join(theme_dest, config)
@@ -76,60 +75,70 @@ def main():
             os.symlink(src, dest)
             print_color(f"Symlinked {config}")
 
-    # Copy hyprland.conf if missing (assume it sources theme.conf)
+    # Copy starter hyprland.conf only if it doesn't exist
     conf_dest = os.path.expanduser('~/.config/hypr/hyprland.conf')
     if not os.path.exists(conf_dest):
         shutil.copy('hyprland.conf', conf_dest)
         print_color("Copied starter hyprland.conf")
 
-    # Optional gaming
+    # Optional utilities
+    if prompt_yes_no("Install utilities (brave-browser, samba, rustdesk-bin)?"):
+        util_pkgs = ['brave-browser', 'samba']
+        install_pkgs(util_pkgs)
+        # rustdesk-bin is AUR → check for yay/paru
+        if pkg_installed('yay') or pkg_installed('paru'):
+            aur_helper = 'yay' if pkg_installed('yay') else 'paru'
+            run_cmd(f'{aur_helper} -S --noconfirm rustdesk-bin')
+        else:
+            print_color("AUR helper (yay/paru) not found. Skipping rustdesk-bin.", 'yellow')
+            print_color("To install manually later: git clone https://aur.archlinux.org/yay.git && cd yay && makepkg -si", 'yellow')
+
+    # Optional gaming packages
     if prompt_yes_no("Install gaming packages (steam, obs-studio, vulkan loaders)?"):
         gaming_pkgs = ['steam', 'obs-studio', 'vulkan-icd-loader', 'lib32-vulkan-icd-loader']
         install_pkgs(gaming_pkgs)
 
-    # Multimedia defaults
+    # Multimedia + MIME defaults
     print_color("Setting up multimedia...")
     media_pkgs = ['mpv', 'swayimg']
     install_pkgs(media_pkgs)
-    # Set MIME defaults (example for video/image)
-    run_cmd('xdg-mime default mpv.desktop video/mp4')
-    run_cmd('xdg-mime default swayimg.desktop image/png')  # Adjust types as needed
+    # Set some common MIME defaults (can be expanded)
+    run_cmd('xdg-mime default mpv.desktop video/mp4 video/mkv video/webm')
+    run_cmd('xdg-mime default swayimg.desktop image/png image/jpeg image/gif')
 
-    # GPU drivers
+    # GPU drivers (auto-detect + prompt)
     gpu = detect_gpu()
     if gpu:
         print_color(f"Detected {gpu.upper()} GPU.")
         if gpu == 'nvidia' and prompt_yes_no("Install NVIDIA drivers?"):
             install_pkgs(['nvidia', 'nvidia-utils'])
-        elif gpu == 'amd' and prompt_yes_no("Install AMD drivers?"):
+        elif gpu == 'amd' and prompt_yes_no("Install AMD open-source drivers?"):
             install_pkgs(['mesa', 'vulkan-radeon', 'lib32-vulkan-radeon'])
     else:
-        print_color("No GPU detected; skipping drivers.", 'yellow')
+        print_color("No discrete GPU detected; skipping driver installation.", 'yellow')
 
     # SDDM setup
     print_color("Setting up SDDM...")
     install_pkgs(['sddm'])
     desktop_file = '/usr/share/wayland-sessions/hyprland.desktop'
     if not os.path.exists(desktop_file):
-        content = """
-[Desktop Entry]
+        content = """[Desktop Entry]
 Name=Hyprland
-Comment=Hyprland Compositor
+Comment=Hyprland Wayland Compositor
 Exec=Hyprland
 Type=Application
 """
         with open('/tmp/hyprland.desktop', 'w') as f:
             f.write(content)
         run_cmd(f'mv /tmp/hyprland.desktop {desktop_file}', sudo=True)
-        run_cmd('chmod 644 {desktop_file}', sudo=True)
+        run_cmd(f'chmod 644 "{desktop_file}"', sudo=True)
     run_cmd('systemctl enable sddm', sudo=True)
 
     # Optional autologin
-    if prompt_yes_no("Enable autologin for current user?"):
+    if prompt_yes_no("Enable autologin for current user? (recommended for single-user setups)"):
         autologin_dir = '/etc/sddm.conf.d/'
         os.makedirs(autologin_dir, exist_ok=True)
-        content = f"""
-[Autologin]
+        content = f"""[Autologin]
 User={os.getlogin()}
 Session=hyprland.desktop
 """
@@ -139,13 +148,16 @@ Session=hyprland.desktop
         run_cmd(f'mv /tmp/autologin.conf {autologin_file}', sudo=True)
 
     # Final instructions
-    print_color("Setup complete! Final steps:")
-    print("- Edit ~/.config/hypr/hyprland.conf as needed (sources theme.conf).")
-    print("- Wallpaper: Ensure swww line in conf points to ~/.config/hypr/themes/dark/wallpaper/wallpaper.png.")
-    print("- Reboot to start Hyprland via SDDM.")
-    print("- Troubleshoot: Check Arch Wiki (hyprland, sddm) or CachyOS forums.")
+    print_color("\nSetup complete!", 'green')
+    print("Final steps & recommendations:")
+    print("  • Edit ~/.config/hypr/hyprland.conf if needed")
+    print("    (should already source ~/.config/hypr/themes/dark/theme.conf)")
+    print("  • Verify wallpaper command in hyprland.conf:")
+    print("      exec-once = swww init && swww img ~/.config/hypr/themes/dark/wallpaper/wallpaper.png")
+    print("  • Reboot to launch Hyprland via SDDM")
+    print("  • Troubleshooting: Arch Wiki (Hyprland / SDDM), CachyOS forums, or ~/.config/hypr/logs")
 
-    if prompt_yes_no("Reboot now?"):
+    if prompt_yes_no("Reboot now to start Hyprland?"):
         run_cmd('reboot', sudo=True)
 
 if __name__ == '__main__':
