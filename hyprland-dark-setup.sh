@@ -1,30 +1,38 @@
 #!/usr/bin/env bash
 
-# cachy-hypr-deps-install.sh
-# Purpose: Install Hyprland + Wayland essentials + audio + QoL on minimal CachyOS (no theme/config apply)
-# Designed to be re-runnable and safe
-# Run as regular user from any directory
+# hyprland-dark-setup.sh
+# Purpose: Automate post-install setup on minimal CachyOS (TTY/no GUI) to create a dark-themed Hyprland desktop
+# Run as regular user from cloned repo directory[](https://github.com/RepoRet/CachyHyprDark.git)
+# Idempotent: safe to re-run, skips existing packages/files/symlinks
+# Updated 2026 edition: improved error handling, AUR detection, added xdg-portal, better prompts
 
 set -euo pipefail
 
-# Colors
+# Colors for output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
-echo -e "${BLUE}=== CachyOS Hyprland Dependencies Installer (2026 edition) ===${NC}"
-echo "This script installs packages only — no configs, themes, SDDM, or MIME changes."
-echo "Re-run safe. Skips already installed packages."
+echo -e "${BLUE}=== Hyprland Dark Setup for CachyOS (2026 Updated) ===${NC}"
+echo "This script installs deps, applies dark theme, sets up SDDM, MIME defaults, etc."
+echo "Assumes cloned repo with ./themes/dark/ and hyprland.conf present."
+echo "Re-run safe. Skips existing items."
 echo
+
+# Check if running from repo dir (look for themes/dark/)
+if [ ! -d "./themes/dark" ] || [ ! -f "./hyprland.conf" ]; then
+    echo -e "${RED}Error: Must run from cloned repo directory (contains themes/dark/ and hyprland.conf).${NC}"
+    exit 1
+fi
 
 # Helper: check if command exists
 command_exists() {
     command -v "$1" >/dev/null 2>&1
 }
 
-# Helper: install package list if any missing
+# Helper: install package list if any missing (pacman)
 install_if_missing() {
     local pkgs=("$@")
     local to_install=()
@@ -44,15 +52,35 @@ install_if_missing() {
     sudo pacman -S --needed --noconfirm "${to_install[@]}"
 }
 
+# Helper: install AUR package if missing (prefers paru > yay)
+install_aur_if_missing() {
+    local pkg="$1"
+    if pacman -Qq "$pkg" &>/dev/null; then
+        echo -e "${GREEN}$pkg already installed.${NC}"
+        return 0
+    fi
+
+    if command_exists paru; then
+        echo -e "${YELLOW}Installing $pkg via paru...${NC}"
+        paru -S --noconfirm "$pkg"
+    elif command_exists yay; then
+        echo -e "${YELLOW}Installing $pkg via yay...${NC}"
+        yay -S --noconfirm "$pkg"
+    else
+        echo -e "${RED}No AUR helper (paru/yay) found. Skipping $pkg.${NC}"
+        return 1
+    fi
+}
+
 # Step 0: Update system
 echo -e "${BLUE}→ Updating system...${NC}"
 sudo pacman -Syu --noconfirm
 
-# Step 1: Core Hyprland + Wayland stack
+# Step 1: Core packages
 echo -e "${BLUE}→ Installing core Hyprland & Wayland packages...${NC}"
 core_packages=(
     hyprland
-    xdg-desktop-portal-hyprland
+    xdg-desktop-portal-hyprland  # Added: fixes many app portals
     waybar
     kitty
     rofi-wayland
@@ -72,7 +100,7 @@ core_packages=(
 
 install_if_missing "${core_packages[@]}"
 
-# Step 2: Audio (Pipewire full stack)
+# Step 2: Audio stack
 echo -e "${BLUE}→ Installing Pipewire audio stack...${NC}"
 audio_packages=(
     pipewire
@@ -84,21 +112,20 @@ audio_packages=(
 
 install_if_missing "${audio_packages[@]}"
 
-# Step 3: Optional – build hyprtheme? (requires rust)
+# Step 3: Optional hyprtheme build (requires rust)
 build_hyprtheme=false
 if command_exists rustc; then
-    echo -e "${YELLOW}Rust detected — would you like to build & install hyprtheme? (y/N)${NC}"
+    echo -e "${YELLOW}Rust detected. Build & install hyprtheme? (y/N)${NC}"
     read -r answer
     if [[ "$answer" =~ ^[Yy]$ ]]; then
         build_hyprtheme=true
     fi
 else
-    echo -e "${YELLOW}Rust not found — skipping hyprtheme build (install rust if desired).${NC}"
+    echo -e "${YELLOW}Rust not found. Skipping hyprtheme (install rust to enable).${NC}"
 fi
 
 if $build_hyprtheme; then
     echo -e "${BLUE}→ Building hyprtheme from source...${NC}"
-    local tmpdir
     tmpdir=$(mktemp -d)
     git clone https://github.com/alexjercan/hyprtheme.git "$tmpdir"
     cd "$tmpdir"
@@ -108,89 +135,45 @@ if $build_hyprtheme; then
     echo -e "${GREEN}hyprtheme installed.${NC}"
 fi
 
-# Step 4: Optional groups
-echo
-echo -e "${BLUE}→ Optional packages${NC}"
+# Step 4: Apply theme via rsync
+echo -e "${BLUE}→ Applying dark theme to ~/.config/hypr/themes/dark/...${NC}"
+mkdir -p ~/.config/hypr/themes/dark/
+rsync -a --delete ./themes/dark/ ~/.config/hypr/themes/dark/
+echo -e "${GREEN}Theme rsynced (overwrites changes in target).${NC}"
 
-# Utilities
-echo -e "${YELLOW}Install utilities? (brave-browser, samba, rustdesk-bin via AUR) (y/N)${NC}"
-read -r utils_choice
-if [[ "$utils_choice" =~ ^[Yy]$ ]]; then
-    utils_official=(brave-browser samba)
-    install_if_missing "${utils_official[@]}"
+# Step 5: Create symlinks (skip if exist)
+echo -e "${BLUE}→ Setting up symlinks for configs...${NC}"
+link_targets=(
+    "waybar:~/.config/waybar"
+    "kitty:~/.config/kitty"
+    "rofi:~/.config/rofi"
+    "dunst:~/.config/dunst"
+    "swaylock:~/.config/swaylock"
+    "wlogout:~/.config/wlogout"
+)
 
-    if ! pacman -Qq rustdesk-bin &>/dev/null; then
-        if ! command_exists yay && ! command_exists paru; then
-            echo -e "${RED}No AUR helper found (yay/paru). Skipping rustdesk-bin.${NC}"
-        else
-            echo -e "${YELLOW}Installing rustdesk-bin via AUR...${NC}"
-            if command_exists paru; then
-                paru -S --noconfirm rustdesk-bin
-            else
-                yay -S --noconfirm rustdesk-bin
-            fi
-        fi
+for pair in "${link_targets[@]}"; do
+    src_dir="${pair%%:*}"
+    target="${pair##*:}"
+    src_path="$HOME/.config/hypr/themes/dark/$src_dir"
+
+    if [ -d "$src_path" ] && [ ! -L "$target" ] && [ ! -e "$target" ]; then
+        ln -s "$src_path" "$target"
+        echo -e "${GREEN}Symlink created: $target -> $src_path${NC}"
+    else
+        echo -e "${YELLOW}Skipping symlink for $target (exists or not a dir).${NC}"
     fi
-fi
+done
 
-# Gaming
-echo -e "${YELLOW}Install gaming packages? (steam, obs-studio, vulkan-icd-loader + lib32) (y/N)${NC}"
-read -r gaming_choice
-if [[ "$gaming_choice" =~ ^[Yy]$ ]]; then
-    gaming_packages=(steam obs-studio vulkan-icd-loader lib32-vulkan-icd-loader)
-    install_if_missing "${gaming_packages[@]}"
-fi
-
-# Step 5: GPU drivers
-echo -e "${BLUE}→ GPU detection & driver install${NC}"
-gpu_info=$(lspci | grep -E "VGA|3D" | tr '[:upper:]' '[:lower:]')
-
-nvidia=false
-amd=false
-
-if echo "$gpu_info" | grep -q nvidia; then
-    nvidia=true
-    echo -e "${YELLOW}NVIDIA GPU detected.${NC}"
-elif echo "$gpu_info" | grep -q "amd\|ati\|radeon"; then
-    amd=true
-    echo -e "${YELLOW}AMD GPU detected.${NC}"
+# Step 6: Copy hyprland.conf if missing
+echo -e "${BLUE}→ Checking hyprland.conf...${NC}"
+if [ ! -f ~/.config/hypr/hyprland.conf ]; then
+    mkdir -p ~/.config/hypr/
+    cp ./hyprland.conf ~/.config/hypr/hyprland.conf
+    echo -e "${GREEN}hyprland.conf copied.${NC}"
 else
-    echo -e "${YELLOW}No clear NVIDIA/AMD GPU detected (Intel?). Skipping driver prompt.${NC}"
+    echo -e "${YELLOW}hyprland.conf exists — skipping copy.${NC}"
 fi
 
-if $nvidia; then
-    echo -e "${YELLOW}Install NVIDIA drivers? (nvidia + nvidia-utils) (y/N)${NC}"
-    read -r nvidia_choice
-    if [[ "$nvidia_choice" =~ ^[Yy]$ ]]; then
-        install_if_missing nvidia nvidia-utils
-    fi
-fi
-
-if $amd; then
-    echo -e "${YELLOW}Install AMD Vulkan drivers? (mesa + vulkan-radeon + lib32) (y/N)${NC}"
-    read -r amd_choice
-    if [[ "$amd_choice" =~ ^[Yy]$ ]]; then
-        install_if_missing mesa vulkan-radeon lib32-vulkan-radeon
-    fi
-fi
-
-# Step 6: Multimedia defaults packages (mpv + swayimg)
-echo -e "${BLUE}→ Installing multimedia viewers...${NC}"
-media_packages=(mpv swayimg)
-install_if_missing "${media_packages[@]}"
-
-echo
-echo -e "${GREEN}=== Dependency installation complete ===${NC}"
-echo "Installed core Hyprland stack, audio, and selected optionals."
-echo "Next steps (manual):"
-echo "  1. Apply your theme/config/dotfiles (or run your original setup script for that)"
-echo "  2. Configure SDDM if desired: sudo pacman -S sddm   then enable & create hyprland.desktop"
-echo "  3. Reboot or start Hyprland manually"
-echo
-echo -e "${YELLOW}Reboot now? (y/N)${NC}"
-read -r reboot_choice
-if [[ "$reboot_choice" =~ ^[Yy]$ ]]; then
-    sudo reboot
-fi
-
-exit 0
+# Step 7: Optional utilities
+echo -e "${BLUE}→ Optional utilities${
