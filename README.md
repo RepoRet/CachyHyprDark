@@ -12,6 +12,8 @@
 
 One-click-ish post-install setup script that transforms a minimal **CachyOS** installation into a beautiful, performant **Hyprland** desktop with an embedded dark/minimal theme.
 
+<br/>
+
 ## Features
 
 - Full Hyprland + Wayland setup on CachyOS
@@ -22,12 +24,15 @@ One-click-ish post-install setup script that transforms a minimal **CachyOS** in
 - GPU driver detection & prompt (NVIDIA / AMD)
 - SDDM with optional autologin
 - Safe config handling: only creates `hyprland.conf` if it doesn't exist
+<br/>
 
 > [!IMPORTANT]
 > ## Requirements
 >- Fresh/minimal **[CachyOS](https://cachyos.org/)** installation tested on early 2026 ISO build (`cachyos-desktop-linux-251129.iso`).
 >- Internet connection is required during setup.
 >- Familiar with **CLI / TTY** (post basic CachyOS install)
+
+<br/>
 
 ## Installation Steps
 
@@ -41,56 +46,81 @@ One-click-ish post-install setup script that transforms a minimal **CachyOS** in
    ```bash
    cd CachyHyprDark
    ```
+   
+3. **Make Script Executable**
+   ```bash
+   chmod +x hyprland-dark-setup.sh
+   ```
+   
+4. **Run Script**
+   ```bash
+   ./hyprland-dark-setup.sh
+   ```
+   
+**The script will automatically:** \
+`/ Update the system and install core packages` \
+`/ Copy the embedded dark theme files`
+`/ Create symlinks for themed configs (Waybar, Kitty, Rofi, etc.)` \
+`/ Create a starter hyprland.conf (only if it doesn't already exist)` \
+`/ Set up SDDM with Hyprland session` \
+`/ Configure MPV (video) + swayimg (images) as defaults`
 
-Make the script executableBashchmod +x hyprland-dark-setup.sh \
-Run the setup scriptBash./hyprland-dark-setup.sh \
-Answer the y/N prompts (optional apps, drivers, autologin, reboot) \
-The script will: \
-Update system & install core packages \
-Copy embedded theme files \
-Create symlinks for themed app configs \
-Set up starter hyprland.conf (only if missing) \
-Configure SDDM + Hyprland session \
-Install optional software if chosen \
-Set MPV/swayimg as defaults 
+**Follow the on-screen prompts**
+- Answer y/N to install optional packages:
+  - Brave Browser, RustDesk, Samba
+  - Steam + OBS Studio
+- Choose GPU drivers (NVIDIA / AMD) if detected
+- Enable SDDM autologin (optional)
+- Reboot when prompt
 
-
-Reboot when prompted (or manually sudo reboot)
 Login → You should land directly in Hyprland (if autologin enabled) or select Hyprland at SDDM.
 
-Default keybinds (from starter config):
+<br/>
 
-`Super + Q` → open Kitty terminal \
-Super + Space → rofi app launcher \
-Super + Shift + R → reload Hyprland config \
-Super + L → lock screen \
-Super + C → close window \
-Super + Shift + Q → exit Hyprland
+## Default keybinds (from starter config):
+| Shortcut | Description |
+| --- | --- |
+| `Super + Q` | → open Kitty terminal |
+| `Super + Space` | → rofi app launcher |
+| `Super + Shift + R` | → reload Hyprland config |
+| `Super + L` | → lock screen |
+| `Super + C` | → close window |
+| `Super + Shift + Q` | → exit Hyprland |
+<br/>
 
-Customization
-After first run, edit these files freely:
+## Customization
+Future runs of the setup script will not overwrite your existing configuration files.
+| File / Location | Purpose / What to Customize |
+| --- | --- |
+| `~/.config/hypr/hyprland.conf` | Keybinds, monitors, animations, gaps, layout, wallpaper path, window rules… |
+| `~/.config/hypr/themes/dark/theme.conf` | Colors, borders, shadows, rounding, blur settings |
+| `~/.config/hypr/waybar/`, `kitty/`, `rofi/`, etc | App-specific styles (symlinked from the theme folder) |
+<br/>
 
-Main config: ~/.config/hypr/hyprland.conf
-Add monitor lines, change animations, more binds, window rules, etc.
-Wallpaper command: look for the swww img line – update path/filename if your wallpaper file is different
+## Wallpaper
+If the background doesn't appear:
+Check the exact filename inside `~/.config/hypr/themes/dark/wallpaper/`. \
+Update the line in hyprland.conf 
+```
+exec-once = swww img ~/.config/hypr/themes/dark/wallpaper/your-wallpaper-file.png
+```
 
-Theme variables: ~/.config/hypr/themes/dark/theme.conf
-Colors, borders, shadows, rounding, etc.
+<br/>
 
-App-specific styles: ~/.config/hypr/waybar/, kitty/, etc. (symlinked to theme folder)
+## Troubleshooting
+| Issue | Solution / Check |
+| --- | --- |
+| Wallpaper not showing | Verify filename in `wallpaper/` folder and update `swww img` path in config. | 
+| Theme colors not applied | Confirm `source = ~/.config/hypr/themes/dark/theme.conf` is at top of config. | 
+| Missing icons or fonts | Install: `sudo pacman -S ttf-nerd-fonts-symbols`. |
+| NVIDIA graphics issues | Re-run script and select NVIDIA drivers, or install `nvidia-dkms` manually. |
 
-Future script runs will not overwrite your hyprland.conf or theme files.
-Troubleshooting
+Need more help? \
+• Arch Wiki – Hyprland \
+• CachyOS forums \
+• Hyprland Discord
 
-Wallpaper not showing?
-Check exact filename in ~/.config/hypr/themes/dark/wallpaper/ and update the swww img path in hyprland.conf.
-Theme colors not applying?
-Make sure source = ~/.config/hypr/themes/dark/theme.conf is at the top of hyprland.conf.
-Missing icons/fonts?
-ttf-nerd-fonts-symbols should be installed – if not, sudo pacman -S ttf-nerd-fonts-symbols
-NVIDIA issues?
-Re-run script and choose to install nvidia drivers, or manually install nvidia-dkms if using a custom kernel.
-More help: Arch Wiki (Hyprland page), CachyOS forums, Hyprland Discord
+<br/>
 
 ## Repository Structure
 ```
