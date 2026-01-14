@@ -1,0 +1,121 @@
+## Summary of hyprland-dark-setup.sh Script
+
+Goal:
+Automate post-install setup on a minimal CachyOS (TTY/no GUI) to create a modern, dark-themed Hyprland desktop. The script runs as regular user from the cloned repo directory[](https://github.com/RepoRet/CachyHyprDark.git). It is designed to be safe and re-runnable.
+
+Core Philosophy:
+- Embeds a complete "dark" theme in ./themes/dark/
+- Applies theme via rsync + symlinks for Hyprland, Waybar, Kitty, Rofi, Dunst, Swaylock, Wlogout
+- Installs minimal essential Wayland/Hyprland stack + audio (Pipewire) + QoL tools
+- Skips already installed packages and avoids overwriting existing user configs
+- Prompts user for optional packages (utilities, gaming) and GPU drivers
+- Sets up SDDM with Hyprland session + optional autologin
+- Sets MIME defaults for mpv (video) and swayimg (images)
+
+Key Components Installed:
+Core (checked/skipped if present):
+  hyprland waybar kitty rofi-wayland dunst swaylock wlogout swww
+  nwg-look lxappearance qt6ct adwaita-qt6 ttf-nerd-fonts-symbols
+  wl-clipboard cliphist polkit-gnome
+  pipewire pipewire-pulse pipewire-alsa pipewire-jack wireplumber
+
+Optional build:
+  rust → clone/build/install hyprtheme (theme switcher) from GitHub
+
+Multimedia defaults:
+  mpv swayimg + xdg-mime defaults for video/image types
+
+Optional groups (user prompted):
+  Utilities: brave-browser samba rustdesk-bin (via yay if available)
+  Gaming: steam obs-studio vulkan-icd-loader lib32-vulkan-icd-loader
+
+GPU (auto-detected via lspci, user prompted):
+  NVIDIA → nvidia nvidia-utils
+  AMD    → mesa vulkan-radeon lib32-vulkan-radeon
+
+Display Manager:
+  Creates /usr/share/wayland-sessions/hyprland.desktop
+  Optional: sets autologin in /etc/sddm.conf.d/
+
+Main Steps:
+1. sudo pacman -Syu --noconfirm
+2. Install/check core packages
+3. Optional: build/install hyprtheme
+4. rsync ./themes/dark/ → ~/.config/hypr/themes/dark/ (--delete)
+5. Create symlinks for waybar/kitty/rofi/dunst/swaylock/wlogout to theme dir
+6. Copy hyprland.conf only if ~/.config/hypr/hyprland.conf does not exist
+7. Prompt & install optional utilities / gaming packages
+8. Install mpv + swayimg, set MIME defaults
+9. Detect GPU → prompt & install drivers
+10. Create Hyprland .desktop for SDDM + optional autologin config
+11. Show final instructions → prompt for immediate reboot
+
+Safety features:
+- Skips existing packages/files/symlinks
+- Colored output + error trapping
+- User confirmation for optional/reboot steps
+- Assumes fresh minimal CachyOS install
+
+
+## Repo Source
+https://github.com/RepoRet/CachyHyprDark.git
+CachyHyprDark/                           # repo root
+├── hyprland-dark-setup.sh               # the only script — installs everything
+├── hyprland.conf                        # template / starter config (script copies it if missing)
+├── README.md                            # instructions, credits, usage
+└── themes/
+    └── dark/                            # embedded copy of alexjercan/darker-hyprland-theme contents (minus install/load/cleanup)
+        ├── .resources/                  # if present in original
+        ├── dunst/                       # config files
+        ├── kitty/
+        ├── rofi/
+        ├── swaylock/
+        ├── wallpaper/                   # image(s) — adjust swww line if filename ≠ wallpaper.png
+        ├── waybar/
+        ├── wlogout/
+        ├── theme.conf                   # Hyprland variables — sourced in hyprland.conf
+        └── theme.toml                   # keep if you want hyprtheme compatibility later
+
+## Themes/dark Folder Evaluation Summary
+
+This folder contains all the embedded configuration files and assets for the "dark" theme applied by the setup script. Below is a summary of what each file/directory accomplishes (excluding LICENSE).
+
+theme.conf
+  Defines Hyprland-specific color variables, borders, gaps, animations, and UI styles. Sourced in hyprland.conf to apply a consistent dark palette (e.g., black backgrounds, light gray text, deep blue/purple accents) across windows, workspaces, and decorations.
+
+theme.toml
+  Metadata file for the optional hyprtheme tool. Describes the theme's name, paths, and variables so it can be loaded/switched easily with hyprtheme commands.
+
+dunst/
+  Configuration for Dunst (notification daemon)
+  - dunstrc: Sets dark-themed notifications (dark background, light text, urgency colors, position, size, timeouts) so pop-ups blend with the overall dark aesthetic.
+
+kitty/
+  Configuration for Kitty terminal emulator
+  - kitty.conf: Applies a dark colorscheme (dark background, light foreground, ANSI colors in muted tones), font, padding, ligatures, and transparency for a clean, readable terminal.
+
+rofi/
+  Configuration for Rofi (application launcher/menu)
+  - config.rasi or theme.rasi: Styles the launcher with dark semi-transparent background, light text, borders, icons, and layout (fuzzy search, hover effects) for a matching dark look.
+
+swaylock/
+  Configuration for Swaylock (Wayland lock screen)
+  - config: Sets dark-themed lock screen (dark/blurred background, ring colors, indicator feedback for wrong password, font) for visual consistency and security.
+
+wallpaper/
+  Contains background image assets
+  - wallpaper.png (or similar): Provides the dark-themed desktop wallpaper (e.g., abstract dark gradients or nebula in black/blue tones) referenced by swww in hyprland.conf.
+
+waybar/
+  Configuration for Waybar (status bar)
+  - config.json (or config): Defines modules (workspaces, clock, CPU/RAM, network, battery) with positions, formats, and click actions.
+  - style.css: Applies dark styling via CSS (dark bar background, light text, borders, hover effects, animations) to make the bar seamless with the theme.
+
+wlogout/
+  Configuration for Wlogout (logout/power menu)
+  - config: Defines buttons (logout, shutdown, reboot, suspend) with labels, actions, and layout.
+  - style.css: Styles the menu with dark background, colored buttons, icons, hover effects, and transitions for a polished exit dialog.
+
+.resources/ (if present)
+  Hidden directory for auxiliary assets (icons, scripts, fonts). If it includes files:
+  - Any scripts here load theme-specific resources or icons on startup, ensuring all dark-themed assets are properly available.
