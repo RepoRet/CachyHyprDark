@@ -1,0 +1,17 @@
+CachyHyprDark/                           # repo root
+├── hyprland-dark-setup.sh               # the only script — installs everything
+├── hyprland.conf                        # template / starter config (script copies it if missing)
+├── README.md                            # instructions, credits, usage
+└── themes/
+    └── dark/                            # embedded copy of alexjercan/darker-hyprland-theme contents (minus install/load/cleanup)
+        ├── .resources/                  # if present in original
+        ├── dunst/                       # config files
+        ├── kitty/
+        ├── rofi/
+        ├── swaylock/
+        ├── wallpaper/                   # image(s) — adjust swww line if filename ≠ wallpaper.png
+        ├── waybar/
+        ├── wlogout/
+        ├── theme.conf                   # Hyprland variables — sourced in hyprland.conf
+        ├── theme.toml                   # keep if you want hyprtheme compatibility later
+        └── LICENSE                      # from original (keep for credit)
