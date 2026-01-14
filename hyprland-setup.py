@@ -137,15 +137,21 @@ Type=Application
     # Optional autologin
     if prompt_yes_no("Enable autologin for current user? (recommended for single-user setups)"):
         autologin_dir = '/etc/sddm.conf.d/'
-        os.makedirs(autologin_dir, exist_ok=True)
+        autologin_file = os.path.join(autologin_dir, 'autologin.conf')
+        
+        # Create directory with sudo if missing
+        if not os.path.exists(autologin_dir):
+            run_cmd(f'mkdir -p {autologin_dir}', sudo=True)
+            run_cmd(f'chmod 755 {autologin_dir}', sudo=True)
+        
+        # Write config file with sudo
         content = f"""[Autologin]
 User={os.getlogin()}
 Session=hyprland.desktop
 """
-        autologin_file = os.path.join(autologin_dir, 'autologin.conf')
-        with open('/tmp/autologin.conf', 'w') as f:
-            f.write(content)
-        run_cmd(f'mv /tmp/autologin.conf {autologin_file}', sudo=True)
+        # Use echo + sudo tee to write safely
+        run_cmd(f"echo '{content}' | sudo tee {autologin_file} > /dev/null")
+        print_color(f"Autologin configured: {autologin_file}")
 
     # Final instructions
     print_color("\nSetup complete!", 'green')
