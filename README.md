@@ -49,12 +49,12 @@ One-click-ish post-install setup script that transforms a minimal **CachyOS** in
    
 3. **Make Script Executable**
    ```bash
-   chmod +x hyprland-dark-setup.sh
+   pending
    ```
    
 4. **Run Script**
    ```bash
-   ./hyprland-dark-setup.sh
+   python hyprland-setup.py
    ```
    
 **The script will automatically:** \
@@ -125,7 +125,7 @@ Need more help? \
 ## Repository Structure
 ```
 CachyHyprDark/
-├── hyprland-dark-setup.sh          # Main installation script – run this!
+├── hyprland-setup.py               # Main installation script – run this!
 ├── hyprland.conf                   # Starter config template (copied only if missing)
 ├── README.md                       # This file
 └── themes/
