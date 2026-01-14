@@ -1,10 +1,16 @@
-# CachyHyprDark – Hyprland + Dark Theme Setup for CachyOS
+# Hyprland + Dark Theme Setup for Baseline CachyOS
 
-One-click-ish post-install setup script that transforms a minimal **CachyOS** installation into a beautiful, performant **Hyprland** desktop with an embedded dark/minimal theme (heavily inspired by and forked from [alexjercan/darker-hyprland-theme](https://github.com/alexjercan/darker-hyprland-theme)).
+> [!CAUTION]
+> **CRITIAL IMPORTANT** \
+> EARLY BUILD - not ready for use. 
 
-**Credits**  
-Theme assets and concepts are based on the excellent work by [@alexjercan](https://github.com/alexjercan) in the original darker-hyprland-theme repository.  
-This version embeds the theme files directly, removes the original install/load/cleanup scripts, and consolidates everything into a single setup script for easier maintenance and future customization.
+> [!WARNING]
+> Script is in testing phase.
+
+> [!IMPORTANT]
+> Proceed at your own risk.
+
+One-click-ish post-install setup script that transforms a minimal **CachyOS** installation into a beautiful, performant **Hyprland** desktop with an embedded dark/minimal theme.
 
 ## Features
 
@@ -17,28 +23,11 @@ This version embeds the theme files directly, removes the original install/load/
 - SDDM with optional autologin
 - Safe config handling: only creates `hyprland.conf` if it doesn't exist
 
-## Repository Structure
-CachyHyprDark/
-├── hyprland-dark-setup.sh          # Main installation script – run this!
-├── hyprland.conf                   # Starter config template (copied only if missing)
-├── README.md                       # This file
-    └── themes/
-        └── dark/                       # Embedded theme files (forked & modified)
-	    ├── dunst/                  # Notification theme
-	    ├── kitty/                  # Terminal theme
-	    ├── rofi/                   # Launcher theme
-	    ├── swaylock/               # Lock screen theme
-	    ├── wallpaper/              # Background image(s)
-	    ├── waybar/                 # Status bar theme
-	    ├── wlogout/                # Logout menu theme
-	    ├── theme.conf              # Hyprland color/border variables
-	    ├── theme.toml              # Theme metadata (optional)
-
-## Requirements
-
-- Fresh/minimal **CachyOS** installation (preferably the latest ISO as of 2026)
-- Internet connection during setup
-- Run in **TTY** (after base install, before any desktop environment)
+> [!IMPORTANT]
+> ## Requirements
+>- Fresh/minimal **[CachyOS](https://cachyos.org/)** installation tested on early 2026 ISO build (`cachyos-desktop-linux-251129.iso`).
+>- Internet connection is required during setup.
+>- Familiar with **CLI / TTY** (post basic CachyOS install)
 
 ## Installation Steps
 
@@ -46,19 +35,24 @@ CachyHyprDark/
 
    ```bash
    git clone https://github.com/RepoRet/CachyHyprDark.git
+   ```
+   
+2. **Change Directory**
+   ```bash
    cd CachyHyprDark
+   ```
 
-Make the script executableBashchmod +x hyprland-dark-setup.sh
-Run the setup scriptBash./hyprland-dark-setup.sh
-Answer the y/N prompts (optional apps, drivers, autologin, reboot)
-The script will:
-Update system & install core packages
-Copy embedded theme files
-Create symlinks for themed app configs
-Set up starter hyprland.conf (only if missing)
-Configure SDDM + Hyprland session
-Install optional software if chosen
-Set MPV/swayimg as defaults
+Make the script executableBashchmod +x hyprland-dark-setup.sh \
+Run the setup scriptBash./hyprland-dark-setup.sh \
+Answer the y/N prompts (optional apps, drivers, autologin, reboot) \
+The script will: \
+Update system & install core packages \
+Copy embedded theme files \
+Create symlinks for themed app configs \
+Set up starter hyprland.conf (only if missing) \
+Configure SDDM + Hyprland session \
+Install optional software if chosen \
+Set MPV/swayimg as defaults 
 
 
 Reboot when prompted (or manually sudo reboot)
@@ -66,11 +60,11 @@ Login → You should land directly in Hyprland (if autologin enabled) or select 
 
 Default keybinds (from starter config):
 
-Super + Q → open Kitty terminal
-Super + Space → rofi app launcher
-Super + Shift + R → reload Hyprland config
-Super + L → lock screen
-Super + C → close window
+`Super + Q` → open Kitty terminal \
+Super + Space → rofi app launcher \
+Super + Shift + R → reload Hyprland config \
+Super + L → lock screen \
+Super + C → close window \
 Super + Shift + Q → exit Hyprland
 
 Customization
@@ -98,11 +92,35 @@ NVIDIA issues?
 Re-run script and choose to install nvidia drivers, or manually install nvidia-dkms if using a custom kernel.
 More help: Arch Wiki (Hyprland page), CachyOS forums, Hyprland Discord
 
-License
-This repository combines original work with a fork of darker-hyprland-theme.
-See themes/dark/LICENSE for the original theme license.
-Everything added/modified here follows the same spirit (usually MIT or equivalent).
-Enjoy your clean, dark, performant Hyprland setup on CachyOS!
-Feedback / PRs welcome.
+## Repository Structure
+```
+CachyHyprDark/
+├── hyprland-dark-setup.sh          # Main installation script – run this!
+├── hyprland.conf                   # Starter config template (copied only if missing)
+├── README.md                       # This file
+└── themes/
+    └── dark/                       # Embedded theme files (forked & modified)
+        ├── dunst/                  # Notification theme
+        ├── kitty/                  # Terminal theme
+        ├── rofi/                   # Launcher theme
+        ├── swaylock/               # Lock screen theme
+        ├── wallpaper/              # Background image(s)
+        ├── waybar/                 # Status bar theme
+        ├── wlogout/                # Logout menu theme
+        ├── theme.conf              # Hyprland color/border variables
+        ├── theme.toml              # Theme metadata (optional)
+        └── LICENSE                 # Original license & credits
+```
+
+> [!NOTE]
+> License
+> This repository combines original work with a fork of darker-hyprland-theme.
+> See themes/dark/LICENSE for the original theme license.
+> Everything added/modified here follows the same spirit (usually MIT or equivalent).
+> Enjoy your clean, dark, performant Hyprland setup on CachyOS!
+> Feedback / PRs welcome. \
+> \
+> **Credits**  
+>Theme assets and concepts are based on the excellent work by [@alexjercan](https://github.com/alexjercan) in the original  [alexjercan/darker-hyprland-theme](https://github.com/alexjercan/darker-hyprland-theme) repository. This version embeds the theme files directly, removes the original install/load/cleanup scripts, and consolidates everything into a single setup script for easier maintenance and future customization.
 
 — RepoRet (@RepoRet)
